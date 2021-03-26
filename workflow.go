@@ -10,39 +10,7 @@ type Workflow struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Nodes       []*Node   `json:"nodes"`
-	// Triggers []Trigger
-	// Name     string
-	// Steps    []Step
 }
-
-type Node struct {
-	ID          uuid.UUID `json:"id"`
-	Integration string    `json:"integration"`
-	Action      string    `json:"action"`
-	IsSource    bool      `json:"is_source"`
-	// TODO decide if this is a good name
-	Parameters []*Parameter `json:"parameters"`
-	// inputs
-	// outputs
-}
-
-type Edge struct {
-	HeadID uuid.UUID `json:"head_id"`
-	Head   *Node     `json:"head"`
-	TailID uuid.UUID `json:"tail_id"`
-	Tail   *Node     `json:"tail"`
-}
-
-type Parameter struct {
-	ID   uuid.UUID `json:"id"`
-	Path string    `json:"path"`
-}
-
-//type Step struct {
-//	Name         string
-//	Dependencies []string
-//	Action       Action
-//}
 
 type WorkflowService interface {
 	CreateWorkflow(ctx context.Context, req CreateWorkflowRequest) (*Workflow, error)
@@ -52,12 +20,31 @@ type WorkflowService interface {
 	GetWorkflows(ctx context.Context, req GetWorkflowsRequest) ([]*Workflow, int, error)
 }
 
-type CreateWorkflowRequest struct{}
+type CreateWorkflowRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
 
-type UpdateWorkflowRequest struct{}
+type NodeDTO struct {
+	Action      string `json:"action"`
+	Integration string `json:"integration"`
+}
 
-type DeleteWorkflowRequest struct{}
+type UpdateWorkflowRequest struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+}
 
-type GetWorkflowByIDRequest struct{}
+type DeleteWorkflowRequest struct {
+	ID uuid.UUID `json:"id"`
+}
 
-type GetWorkflowsRequest struct{}
+type GetWorkflowByIDRequest struct {
+	ID uuid.UUID `json:"id"`
+}
+
+type GetWorkflowsRequest struct {
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
+}

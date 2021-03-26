@@ -3,6 +3,8 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"net/http"
 
 	"github.com/openmesh/flow"
@@ -71,4 +73,20 @@ func ErrorStatusCode(code string) int {
 		return v
 	}
 	return http.StatusInternalServerError
+}
+
+// uuidFromVar extracts a uuid.UUID from a given http.Request. Returns an error if the uuid.UUID cannot be parsed.
+func uuidFromVar(r *http.Request, param string) (uuid.UUID, error) {
+	vars := mux.Vars(r)
+	raw, ok := vars[param]
+	if !ok {
+		return uuid.UUID{}, flow.Errorf(flow.EINVALID, "Invalid value for parameter '%s'.", param)
+	}
+
+	id, err := uuid.FromBytes([]byte(raw))
+	if err != nil {
+		return id, flow.Errorf(flow.EINVALID, "Invalid value for parameter '%s'.", param)
+	}
+
+	return id, nil
 }
