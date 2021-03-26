@@ -12,3 +12,9 @@
 - Actions have an input and output as well as a behaviour that is unique for each action 
 
 Sounds good
+
+## Workflow overview
+
+- Persistent representation of the workflow gets created 
+- Trigger comes in from event bus
+- If it matches one of the user's stored workflow runner creates a concrete `workflow.Workflow` from the persisted version
