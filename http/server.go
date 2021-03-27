@@ -2,13 +2,13 @@ package http
 
 import (
 	"context"
+	"github.com/gorilla/securecookie"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"github.com/openmesh/flow"
 )
 
@@ -18,12 +18,17 @@ const ShutdownTimeout = 1 * time.Second
 type Server struct {
 	ln     net.Listener
 	server *http.Server
-	router *mux.Router
+	mux    *http.ServeMux
+	sc     *securecookie.SecureCookie
 
 	// Bind address & domain for the server's listener.
 	// If domain is specified, server is run on TLS using acme/autocert.
 	Addr   string
 	Domain string
+
+	// Keys used for secure cookie encryption.
+	HashKey  string
+	BlockKey string
 
 	Logger log.Logger
 
@@ -34,7 +39,7 @@ type Server struct {
 
 func NewServer() *Server {
 	s := &Server{
-		router: mux.NewRouter(),
+		mux:    http.NewServeMux(),
 		server: &http.Server{},
 	}
 
@@ -58,7 +63,7 @@ func healthCheck(w http.ResponseWriter, _ *http.Request) {
 func (s *Server) Open() (err error) {
 	// Assign all the base handlers
 	s.configureHandlers()
-	s.router.HandleFunc("/health", healthCheck)
+	s.mux.HandleFunc("/health", healthCheck)
 
 	// Open a listener on our bind address.
 	if s.ln, err = net.Listen("tcp", s.Addr); err != nil {
@@ -86,7 +91,7 @@ func (s *Server) Close() error {
 // RegisterRoute allows additional routes to be registered to the router. This allows instrumenting middleware to be
 // implemented without the Server knowing about the implementation.
 func (s *Server) RegisterRoute(path string, handler http.Handler) {
-	s.router.Handle(path, handler)
+	s.mux.Handle(path, handler)
 }
 
 func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
@@ -109,10 +114,10 @@ func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		allowedHeaders,
 		allowedMethods,
 		handlers.AllowCredentials(),
-	)(s.router).ServeHTTP(w, r)
+	)(s.mux).ServeHTTP(w, r)
 }
 
 func (s *Server) configureHandlers() {
-	s.router.Handle("/v1/workflows/", makeWorkflowHandler(s.WorkflowService, s.Logger))
-	s.router.Handle("/v1/webhooks/", makeWebhookHandlers(s.EventBus, s.Logger))
+	s.mux.Handle("/v1/workflows/", makeWorkflowHandler(s.WorkflowService, s.Logger))
+	s.mux.Handle("/v1/webhooks/", makeWebhookHandlers(s.EventBus, s.Logger))
 }

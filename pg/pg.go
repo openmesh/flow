@@ -12,7 +12,9 @@ import (
 
 	"github.com/golang-migrate/migrate"
 	"github.com/golang-migrate/migrate/database/postgres"
+	_ "github.com/golang-migrate/migrate/source/file"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type DB struct {
@@ -98,20 +100,20 @@ func (db *DB) migrate() error {
 	return nil
 }
 
-// insert an entity into the database. The reflect package is used to build the query from the provided entity. `entity`
-// should be a pointer to the struct that should be inserted into the database. It is expected that the underlying
-// struct would have the following properties: ID, CompanyID, CreatedAt, UpdatedAt, CreatedBy, UpdatedBy. These
-// fields are set by the method using the information about the user that is extracted from ctx.
-func insert(ctx context.Context, tx *Tx, entity interface{}, table string) error {
+// insertRow inserts an entity into the database. The reflect package is used to build the query
+// from the provided entity. `entity` should be a pointer to the struct that should be inserted into
+// the database. It is expected that the underlying struct would have the following properties: ID,
+// CompanyID, CreatedAt, UpdatedAt, CreatedBy, UpdatedBy. These fields are set by the method using
+// the information about the user that is extracted from ctx.
+func insertRow(ctx context.Context, tx *Tx, entity interface{}, table string) error {
 	// Get current user from context.
 	// user := session.UserFromContext(ctx)
 
-	// currTime := time.Now()
+	currTime := time.Now()
 
 	// Set metadata for struct to be inserted into the database.
-	// reflect.Indirect(reflect.ValueOf(entity)).FieldByName("CompanyID").SetInt(int64(user.CompanyID))
-	// reflect.Indirect(reflect.ValueOf(entity)).FieldByName("CreatedAt").Set(reflect.ValueOf(currTime))
-	// reflect.Indirect(reflect.ValueOf(entity)).FieldByName("UpdatedAt").Set(reflect.ValueOf(currTime))
+	reflect.Indirect(reflect.ValueOf(entity)).FieldByName("CreatedAt").Set(reflect.ValueOf(currTime))
+	reflect.Indirect(reflect.ValueOf(entity)).FieldByName("UpdatedAt").Set(reflect.ValueOf(currTime))
 	// reflect.Indirect(reflect.ValueOf(entity)).FieldByName("CreatedBy").SetInt(int64(user.ID))
 	// reflect.Indirect(reflect.ValueOf(entity)).FieldByName("UpdatedBy").SetInt(int64(user.ID))
 
@@ -127,10 +129,18 @@ func insert(ctx context.Context, tx *Tx, entity interface{}, table string) error
 			return flow.Errorf(flow.EINTERNAL,
 				"Field '%s' does not contain a `db` tag.", field.Name)
 		}
+
 		// The tag `id,omitempty` should be used for primary key fields and should be omitted from the query. The tag `-`
 		// should be used for related structs and properties that do not have an underlying value persisted in the database.
 		// These values should also be omitted from the query.
-		if column == "id,omitempty" || column == "-" {
+		if column == "id,omitempty" {
+			if !reflect.Indirect(reflect.ValueOf(entity)).FieldByName("ID").IsNil() {
+				columns = append(columns, "id")
+				continue
+			}
+			continue
+		}
+		if column == "-" || column == "created_at" || column == "updated_at" {
 			continue
 		}
 		columns = append(columns, column)
@@ -158,8 +168,89 @@ func insert(ctx context.Context, tx *Tx, entity interface{}, table string) error
 	}
 
 	// Assign the returned ID value to the entity.
-	reflect.Indirect(reflect.ValueOf(entity)).FieldByName("ID").Set(reflect.ValueOf(id))
+	reflect.Indirect(reflect.ValueOf(entity)).FieldByName("ID").Set(reflect.ValueOf(&id))
 
 	return nil
 }
 
+func updateRow(ctx context.Context, tx *Tx, entity interface{}, table string) error {
+	// Get current user from context.
+	// user := session.UserFromContext(ctx)
+
+	// Set metadata for struct to be inserted into the database.
+	reflect.Indirect(reflect.ValueOf(entity)).FieldByName("UpdatedAt").Set(reflect.ValueOf(time.Now()))
+	// reflect.Indirect(reflect.ValueOf(entity)).FieldByName("UpdatedBy").SetInt(int64(user.ID))
+
+	// Build a slice containing the column names for all fields to be updated in the database.
+	var columns []string
+
+	t := reflect.Indirect(reflect.ValueOf(entity)).Type()
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		// If a field has no `db` tag then the struct is invalid and we should fail
+		column, ok := field.Tag.Lookup("db")
+		if !ok {
+			return flow.Errorf(flow.EINTERNAL,
+				"Field '%s' does not contain a `db` tag.", field.Name)
+		}
+		// The tag `id,omitempty` should be used for primary key fields and should be omitted from the query. The tag `-`
+		// should be used for related structs and properties that do not have an underlying value persisted in the database.
+		// These values should also be omitted from the query.
+		if column == "id,omitempty" || column == "-" || column == "created_at" || column == "created_by" {
+			continue
+		}
+		columns = append(columns, column)
+	}
+
+	q := fmt.Sprintf("UPDATE %s SET ", table)
+	for i, col := range columns {
+		q += fmt.Sprintf("%s = :%s", col, col)
+		if i == len(columns)-1 {
+			q += " "
+			break
+		}
+		q += ", "
+	}
+
+	q += "WHERE id = :id"
+	_, err := tx.NamedExec(q, entity)
+
+	return err
+}
+
+func getRowByID(ctx context.Context, tx *Tx, dest interface{}, id uuid.UUID, table string) error {
+	q := fmt.Sprintf("SELECT * FROM %s WHERE id = $1", table)
+
+	if err := tx.Get(dest, q, id); err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return flow.Errorf(flow.ENOTFOUND, "'%s' with ID %s could not be found.", table, id)
+		}
+		return err
+	}
+
+	return nil
+}
+
+func deleteRow(ctx context.Context, tx *Tx, id uuid.UUID, table string) error {
+	q := fmt.Sprintf("DELETE FROM %s WHERE id = $1", table)
+	_, err := tx.Exec(q, id)
+	return err
+}
+
+// formatLimitOffset returns a SQL string for a given limit & offset.
+// Clauses are only added if limit and/or offset are greater than zero.
+func formatLimitOffset(limit, page int) string {
+	if limit > 0 && page > 1 {
+		return fmt.Sprintf(`LIMIT %d OFFSET %d`, limit, (page-1)*limit)
+	} else if limit > 0 {
+		return fmt.Sprintf(`LIMIT %d`, limit)
+	}
+	return ""
+}
+
+func where(clause string, val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	return "WHERE " + fmt.Sprintf(clause, val)
+}

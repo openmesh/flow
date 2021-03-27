@@ -28,15 +28,15 @@ func makeWorkflowHandler(s flow.WorkflowService, logger log.Logger) http.Handler
 
 	updateWorkflowHandler := kithttp.NewServer(
 		makeUpdateWorkflowEndpoint(s),
-		decodeCreateWorkflowRequest,
+		decodeUpdateWorkflowRequest,
 		encodeResponse,
 		opts...,
 	)
 
 	deleteWorkflowHandler := kithttp.NewServer(
 		makeDeleteWorkflowEndpoint(s),
-		decodeCreateWorkflowRequest,
-		encodeResponse,
+		decodeDeleteWorkflowRequest,
+		encodeEmptyResponse,
 		opts...,
 	)
 
@@ -49,7 +49,7 @@ func makeWorkflowHandler(s flow.WorkflowService, logger log.Logger) http.Handler
 
 	r := mux.NewRouter()
 
-	r.Handle("/v1/workflows", createWorkflowHandler).Methods("POST")
+	r.Handle("/v1/workflows/", createWorkflowHandler).Methods("POST")
 	r.Handle("/v1/workflows/{id}", updateWorkflowHandler).Methods("PUT")
 	r.Handle("/v1/workflows/{id}", deleteWorkflowHandler).Methods("DELETE")
 	r.Handle("/v1/workflows/{id}", getWorkflowByIDHandler).Methods("GET")
@@ -145,7 +145,7 @@ func decodeDeleteWorkflowRequest(_ context.Context, r *http.Request) (interface{
 func makeGetWorkflowByIDEndpoint(s flow.WorkflowService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(flow.GetWorkflowByIDRequest)
-		return s.GetWorkflowByID(ctx, req), nil
+		return s.GetWorkflowByID(ctx, req)
 	}
 }
 

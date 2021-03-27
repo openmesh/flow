@@ -1,0 +1,8 @@
+[db]
+dsn = "user=postgres password=postgres dbname=flow port=5432 host=localhost sslmode=disable"
+
+[http]
+addr = ":8080"
+domain = ""
+hash-key = "E67B6DB7C182AEC911AC6F97DEA8CEBD4A3B621FE492BFC992706E210F43351C"
+block-key = "26D3C840270104BC0BF0D5C9AC7155EFBD779A034301C30E34F70144B3D725E6"
