@@ -11,13 +11,15 @@ $$ LANGUAGE plpgsql;
 
 CREATE TABLE users
 (
-    id         UUID                 DEFAULT uuid_generate_v4()
-        CONSTRAINT auths_pkey
+    id            UUID                 DEFAULT uuid_generate_v4()
+        CONSTRAINT users_pkey
             PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    name       VARCHAR     NULL,
-    email      VARCHAR     NULL
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    name          VARCHAR     NULL,
+    email         VARCHAR     NULL,
+    password_hash VARCHAR     NULL,
+    api_key       VARCHAR     NOT NULL
 );
 
 CREATE TRIGGER users_set_updated_at
@@ -55,6 +57,10 @@ CREATE TABLE workflows
     id          UUID                 DEFAULT uuid_generate_v4()
         CONSTRAINT workflows_pkey
             PRIMARY KEY,
+    user_id     UUID
+        CONSTRAINT workflows_users_user
+            REFERENCES users
+            ON DELETE CASCADE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     name        VARCHAR     NULL,

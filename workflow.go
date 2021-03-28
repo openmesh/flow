@@ -9,11 +9,16 @@ import (
 type Workflow struct {
 	ID          uuid.UUID `json:"id" db:"id,omitempty"`
 	UserID      uuid.UUID `json:"-" db:"user_id"`
+	User        *User     `json:"-" db:"-"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 	Name        string    `json:"name" db:"name"`
 	Description string    `json:"description" db:"description"`
 	Nodes       []*Node   `json:"nodes" db:"-"`
+}
+
+func CanEditWorkflow(ctx context.Context, workflow *Workflow) bool {
+	return workflow.UserID == UserIDFromContext(ctx)
 }
 
 type WorkflowService interface {
@@ -31,8 +36,9 @@ type WorkflowUpdate struct {
 }
 
 type WorkflowFilter struct {
-	Offset      int     `json:"page"`
-	Limit       int     `json:"limit"`
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
+	ID          *uuid.UUID `json:"id"`
+	Page        int        `json:"page"`
+	Limit       int        `json:"limit"`
+	Name        *string    `json:"name"`
+	Description *string    `json:"description"`
 }

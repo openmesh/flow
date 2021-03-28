@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"github.com/gorilla/securecookie"
 	"net"
 	"net/http"
@@ -35,6 +36,7 @@ type Server struct {
 	EventBus        flow.EventBus
 	WebhookService  flow.WebhookService
 	WorkflowService flow.WorkflowService
+	AuthService     flow.AuthService
 }
 
 func NewServer() *Server {
@@ -61,6 +63,8 @@ func healthCheck(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) Open() (err error) {
+	// Configure secure cookie
+	s.sc = securecookie.New([]byte(s.HashKey), []byte(s.BlockKey))
 	// Assign all the base handlers
 	s.configureHandlers()
 	s.mux.HandleFunc("/health", healthCheck)
@@ -118,6 +122,51 @@ func (s *Server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) configureHandlers() {
-	s.mux.Handle("/v1/workflows/", makeWorkflowHandler(s.WorkflowService, s.Logger))
+	s.mux.Handle("/v1/workflows/", s.makeWorkflowHandler())
 	s.mux.Handle("/v1/webhooks/", makeWebhookHandlers(s.EventBus, s.Logger))
+	s.mux.Handle("/v1/auth/", makeAuthHandler(s.AuthService, s.sc, s.Logger))
+}
+
+func (s *Server) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Read session from secure cookie
+		session, err := s.session(r)
+		if err != nil {
+			encodeError(r.Context(), err, w)
+			return
+		}
+		if session.UserID == uuid.Nil {
+			err := flow.Error{
+				Code:    flow.EUNAUTHORIZED,
+				Message: "Invalid session.",
+			}
+			encodeError(r.Context(), &err, w)
+			return
+		}
+
+		r = r.WithContext(flow.NewContextWithUserID(r.Context(), session.UserID))
+
+		// Delegate work to next HTTP handler.
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) session(r *http.Request) (Session, error) {
+	cookie, err := r.Cookie(SessionCookieName)
+	if err != nil {
+		return Session{}, nil
+	}
+
+	// Decode session into a Session object and return.
+	var session Session
+	if err := s.UnmarshalSession(cookie.Value, &session); err != nil {
+		return Session{}, err
+	}
+	return session, nil
+}
+
+// UnmarshalSession decodes session data into a Session object.
+// This is exported to allow the unit tests to generate fake sessions.
+func (s *Server) UnmarshalSession(data string, session *Session) error {
+	return s.sc.Decode(SessionCookieName, data, &session)
 }

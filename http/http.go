@@ -10,6 +10,16 @@ import (
 	"github.com/openmesh/flow"
 )
 
+const (
+	SessionCookieName = "flow_session"
+)
+
+type Session struct {
+	UserID      uuid.UUID `json:"user_id"`
+	RedirectURL string    `json:"redirect_url"`
+	State       string    `json:"state"`
+}
+
 // ErrorResponse represents a JSON structure for error output.
 type ErrorResponse struct {
 	Error string `json:"error"`
@@ -99,7 +109,7 @@ func uuidFromVar(r *http.Request, param string) (uuid.UUID, error) {
 
 	id, err := uuid.Parse(raw)
 	if err != nil {
-		return id, flow.Errorf(flow.EINVALID, "Invalid value for parameter '%s'.", param)
+		return id, flow.Errorf(flow.EINVALID, "Invalid value provided for parameter '%s'.", param)
 	}
 
 	return id, nil

@@ -17,17 +17,17 @@ const (
 //
 // The authentication system links users by email address.
 type Auth struct {
-	ID uuid.UUID `json:"id" db:"id"`
+	ID uuid.UUID `json:"-" db:"id"`
 
 	// User can have one or more methods of authentication.
 	// However, only one per source is allowed per user.
-	UserID uuid.UUID `json:"user_id" db:"user_id"`
-	User   *User     `json:"user" db:"-"`
+	UserID uuid.UUID `json:"-" db:"user_id"`
+	User   *User     `json:"user,omitempty" db:"-"`
 
 	// The authentication source & the source provider's user ID.
 	// Source can only be "github" currently.
 	Source   string `json:"source" db:"source"`
-	SourceID string `json:"source_id" db:"source_id"`
+	SourceID string `json:"-" db:"source_id"`
 
 	// OAuth fields returned from the authentication provider.
 	// GitHub does not use refresh tokens but the field exists for future providers.
@@ -61,18 +61,20 @@ type AuthService interface {
 	// Permanently deletes an authentication object from the system by ID.
 	// The parent user object is not removed.
 	DeleteAuth(ctx context.Context, id uuid.UUID) error
+
+	SignUp(ctx context.Context, email string, name string, password string) (*User, error)
 }
 
 // AuthFilter represents a filter accepted by FindAuths().
 type AuthFilter struct {
 	// Filtering fields.
 	ID       *uuid.UUID `json:"id"`
-	UserID   *int       `json:"userID"`
+	UserID   *int       `json:"user_id"`
 	Source   *string    `json:"source"`
-	SourceID *string    `json:"sourceID"`
+	SourceID *string    `json:"source_id"`
 
 	// Restricts results to a subset of the total range.
 	// Can be used for pagination.
-	Offset int `json:"offset"`
-	Limit  int `json:"limit"`
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
 }

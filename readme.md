@@ -35,12 +35,22 @@ Sounds good
   ones supplied in the payload.
   
 
+#### Auth endpoints
+
+- `/auth/oauth/{auth_source}` create auth
+- `/auth/signup`
+
 # MVP TODO
 
 ## Backlog
 
-- [ ] Allow users to create a workflow while supplying a UUID
 
 ## In progress
 
+
 ## Complete
+
+- [x] Implement authorization
+- [x] Implement authentication
+- [x] Implement sign up flow
+- [x] Allow users to create a workflow while supplying a UUID

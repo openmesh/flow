@@ -17,6 +17,50 @@ func NewAuthService(db *DB) flow.AuthService {
 	return authService{db}
 }
 
+func (s authService) SignUp(ctx context.Context, email string, name string, password string) (*flow.User, error) {
+	tx, err := s.db.beginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	// Check if a user with same email already exists
+	_, err = getUserByEmail(ctx, tx, email)
+	if err == nil {
+		return nil, &flow.Error{
+			Code:    flow.ECONFLICT,
+			Message: "A user with this email already exists.",
+		}
+	}
+	if flow.ErrorCode(err) != flow.ENOTFOUND {
+		return nil, err
+	}
+
+	// create user
+	passwordHash := hashString(password)
+	user := flow.User{
+		Name:         &name,
+		Email:        &email,
+		PasswordHash: &passwordHash,
+	}
+	if err := createUser(ctx, tx, &user); err != nil {
+		return nil, fmt.Errorf("cannot create user: %w", err)
+	}
+
+	// create auth
+	auth := flow.Auth{
+		UserID:      user.ID,
+		Source:      flow.AuthSourceInternal,
+		SourceID:    user.ID.String(),
+		AccessToken: user.APIKey,
+	}
+	if err := createAuth(ctx, tx, &auth); err != nil {
+		return nil, err
+	}
+
+	user.Auths = append(user.Auths, &auth)
+
+	return &user, tx.Commit()
+}
+
 func (s authService) GetAuthByID(ctx context.Context, id uuid.UUID) (*flow.Auth, error) {
 	tx, err := s.db.beginTx(ctx, nil)
 	if err != nil {
@@ -67,6 +111,9 @@ func (s authService) CreateAuth(ctx context.Context, auth *flow.Auth) error {
 	if other, err := getAuthBySourceID(ctx, tx, auth.Source, auth.SourceID); err == nil {
 		// If an auth already exists for the source user, update with the new tokens.
 		if other, err = updateAuth(ctx, tx, other.ID, auth.AccessToken, auth.RefreshToken, auth.ExpiresAt); err != nil {
+			if other == nil {
+				return fmt.Errorf("cannot update auth: err=%w", err)
+			}
 			return fmt.Errorf("cannot update auth: id=%d err=%w", other.ID, err)
 		} else if err := attachAuthAssociations(ctx, tx, other); err != nil {
 			return err
@@ -84,7 +131,7 @@ func (s authService) CreateAuth(ctx context.Context, auth *flow.Auth) error {
 	if auth.UserID == uuid.New() && auth.User != nil {
 		// Look up the user by email address. If no user can be found then
 		// create a new user with the auth.User object passed in.
-		if user, err := getUserByEmail(ctx, tx, auth.User.Email); err == nil { // user exists
+		if user, err := getUserByEmail(ctx, tx, *auth.User.Email); err == nil { // user exists
 			auth.User = user
 		} else if flow.ErrorCode(err) == flow.ENOTFOUND { // user does not exist
 			if err := createUser(ctx, tx, auth.User); err != nil {
@@ -176,7 +223,7 @@ func getAuths(ctx context.Context, tx *Tx, filter flow.AuthFilter) ([]*flow.Auth
 
 	query := baseQuery + `
 		ORDER BY created_at ASC
-		` + formatLimitOffset(filter.Limit, filter.Offset)
+		` + formatLimitOffset(filter.Limit, filter.Page)
 
 	auths := make([]*flow.Auth, 0)
 	if err := tx.Select(&auths, query); err != nil {
@@ -207,6 +254,8 @@ func createAuth(ctx context.Context, tx *Tx, auth *flow.Auth) error {
 				:refresh_token,
 				:expires_at
 			)
+		RETURNING 
+			*;
 	`)
 	if err != nil {
 		return err
@@ -216,7 +265,9 @@ func createAuth(ctx context.Context, tx *Tx, auth *flow.Auth) error {
 	if err := stmt.Get(&res, auth); err != nil {
 		return err
 	}
-	auth = &res
+	auth.ID = res.ID
+	auth.CreatedAt = res.CreatedAt
+	auth.UpdatedAt = res.UpdatedAt
 
 	return nil
 }
@@ -244,10 +295,13 @@ func updateAuth(ctx context.Context, tx *Tx, id uuid.UUID, accessToken, refreshT
 		SET
 			access_token = $1,
 		    refresh_token = $2,
-		    expires_at = $3,
-		WHERE id = $4
+		    expires_at = $3
+		WHERE 
+		    id = $4
 	`,
-		args...,
+		accessToken,
+		refreshToken,
+		expiresAt,
 	); err != nil {
 		return nil, err
 	}

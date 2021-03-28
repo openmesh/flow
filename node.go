@@ -57,12 +57,8 @@ type NodeUpdate struct {
 	// TODO look at allowing users to update params
 }
 
-type DeleteNodeRequest struct {
-	ID uuid.UUID `json:"id"`
-}
-
 type NodeFilter struct {
 	WorkflowID *uuid.UUID `json:"workflow_id"`
-	Offset     int        `json:"offset"`
+	Page       int        `json:"page"`
 	Limit      int        `json:"limit"`
 }

@@ -33,7 +33,7 @@ func getUsers(ctx context.Context, tx *Tx, filter flow.UserFilter) ([]*flow.User
 		where = append(where, fmt.Sprintf("email = $%d", len(where)+1))
 		args = append(args, *v)
 	}
-	if v := filter.Email; v != nil {
+	if v := filter.APIKey ; v != nil {
 		where = append(where, fmt.Sprintf("api_key = $%d", len(where)+1))
 		args = append(args, *v)
 	}
@@ -44,6 +44,7 @@ func getUsers(ctx context.Context, tx *Tx, filter flow.UserFilter) ([]*flow.User
 	err := tx.Get(
 		&n,
 		fmt.Sprintf("SELECT COUNT(*) FROM (%s) AS count;", baseQuery),
+		args...
 	)
 	if err != nil {
 		return nil, n, err
@@ -51,10 +52,10 @@ func getUsers(ctx context.Context, tx *Tx, filter flow.UserFilter) ([]*flow.User
 
 	query := baseQuery + `
 		ORDER BY created_at ASC
-	` + formatLimitOffset(filter.Limit, filter.Offset)
+	` + formatLimitOffset(filter.Limit, filter.Page)
 
 	users := make([]*flow.User, 0)
-	if err := tx.Select(&users, query); err != nil {
+	if err := tx.Select(&users, query, args...); err != nil {
 		return users, n, err
 	}
 
@@ -62,11 +63,6 @@ func getUsers(ctx context.Context, tx *Tx, filter flow.UserFilter) ([]*flow.User
 }
 
 func createUser(ctx context.Context, tx *Tx, user *flow.User) error {
-	// Perform basic field validation.
-	//if err := user.Validate(); err != nil {
-	//	return err
-	//}
-
 	// Generate random API key.
 	apiKey := make([]byte, 32)
 	if _, err := io.ReadFull(rand.Reader, apiKey); err != nil {
@@ -81,13 +77,15 @@ func createUser(ctx context.Context, tx *Tx, user *flow.User) error {
 				(
 				 	name,
 				 	email,
-				 	api_key
+				 	api_key,
+				 	password_hash
 				)
 		VALUES 
 			(
 			 	:name,
 			 	:email,
-			 	:api_key
+			 	:api_key,
+			 	:password_hash
 			)
 		RETURNING 
 			*
@@ -99,7 +97,9 @@ func createUser(ctx context.Context, tx *Tx, user *flow.User) error {
 	if err := stmt.Get(&res, user); err != nil {
 		return err
 	}
-	user = &res
+	user.ID = res.ID
+	user.CreatedAt = res.CreatedAt
+	user.UpdatedAt = res.UpdatedAt
 
 	return nil
 }

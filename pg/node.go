@@ -6,7 +6,7 @@ import (
 	"github.com/openmesh/flow"
 )
 
-func getNodes(ctx context.Context, tx *Tx, req flow.GetNodesRequest) ([]*flow.Node, int, error) {
+func getNodes(ctx context.Context, tx *Tx, req flow.NodeFilter) ([]*flow.Node, int, error) {
 	// build query to be executed
 	baseQuery := fmt.Sprintf(
 		"SELECT * FROM nodes %s",

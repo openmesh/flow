@@ -150,10 +150,12 @@ func (m *Main) Run(ctx context.Context) (err error) {
 	// Initialize services.
 	eventBus := eventbus.New()
 	workflowService := pg.NewWorkflowService(m.DB)
+	authService := pg.NewAuthService(m.DB)
 
 	// Attach underlying service to the HTTP server.
 	m.HTTPServer.EventBus = eventBus
 	m.HTTPServer.WorkflowService = workflowService
+	m.HTTPServer.AuthService = authService
 
 	m.HTTPServer.RegisterRoute("/metrics", promhttp.Handler())
 

@@ -9,18 +9,20 @@ import (
 // User represents a user in the system. Users are typically created via OAuth
 // using the AuthService.
 type User struct {
-	ID uuid.UUID `json:"id" db:"id"`
+	ID uuid.UUID `json:"-" db:"id"`
 
 	// User's preferred name & email.
-	Name  string `json:"name" db:"name"`
-	Email string `json:"email" db:"email"`
+	Name  *string `json:"name" db:"name"`
+	Email *string `json:"email" db:"email"`
+
+	PasswordHash *string `json:"-" db:"password_hash"`
 
 	// Randomly generated API key for use with the CLI.
 	APIKey string `json:"-" db:"api_key"`
 
 	// Timestamps for user creation & last update.
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 
 	// List of associated OAuth authentication objects.
 	// Currently only GitHub is supported so there should only be a maximum of one.
@@ -37,8 +39,7 @@ type UserService interface {
 	// users which may differ from returned results if filter.Limit is specified.
 	GetUsers(ctx context.Context, filter UserFilter) ([]*User, int, error)
 
-	// Creates a new user. This is only used for testing since users are typically
-	// created during the OAuth creation process in AuthService.CreateAuth().
+	// Creates a new user.
 	CreateUser(ctx context.Context, user *User) error
 
 	// Updates a user object. Returns EUNAUTHORIZED if current user is not
@@ -56,11 +57,11 @@ type UserFilter struct {
 	// Filtering fields.
 	ID     *uuid.UUID `json:"id"`
 	Email  *string    `json:"email"`
-	APIKey *string    `json:"apiKey"`
+	APIKey *string    `json:"api_key"`
 
 	// Restrict to subset of results.
-	Offset int `json:"offset"`
-	Limit  int `json:"limit"`
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
 }
 
 // UserUpdate represents a set of fields to be updated via UpdateUser().
