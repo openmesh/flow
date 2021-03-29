@@ -44,17 +44,22 @@ type Param struct {
 type NodeService interface {
 	GetNodeByID(ctx context.Context, id uuid.UUID) (*Node, error)
 	GetNodes(ctx context.Context, filter NodeFilter) ([]*Node, int, error)
-	CreateNode(ctx context.Context, node *Node) (*Node, error)
-	UpdateNode(ctx context.Context, upd NodeUpdate) (*Node, error)
+	CreateNode(ctx context.Context, node *Node) error
+	UpdateNode(ctx context.Context, id uuid.UUID, upd NodeUpdate) (*Node, error)
 	DeleteNode(ctx context.Context, id uuid.UUID) error
 }
 
 type NodeUpdate struct {
-	ID          uuid.UUID `json:"id"`
-	WorkflowID  uuid.UUID `json:"workflow_id"`
-	Integration string    `json:"integration"`
-	Action      string    `json:"action"`
-	// TODO look at allowing users to update params
+	Integration string       `json:"integration"`
+	Action      string       `json:"action"`
+	ParentIDs   []*uuid.UUID `json:"parent_ids" db:"-"`
+	ChildrenIDs []*uuid.UUID `json:"children_ids" db:"-"`
+}
+
+type ParamUpdate struct {
+	Key   string    `json:"key" db:"key"`
+	Value string    `json:"value" db:"value"`
+	Type  ParamType `json:"type" db:"type"`
 }
 
 type NodeFilter struct {

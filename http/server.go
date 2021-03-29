@@ -37,6 +37,7 @@ type Server struct {
 	WebhookService  flow.WebhookService
 	WorkflowService flow.WorkflowService
 	AuthService     flow.AuthService
+	NodeService     flow.NodeService
 }
 
 func NewServer() *Server {
