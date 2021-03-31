@@ -1,6 +1,11 @@
 import { Button, IconButton } from "@chakra-ui/button";
-import { Box, Center, Flex, Text } from "@chakra-ui/layout";
-import { PlusOutline } from "@graywolfai/react-heroicons";
+import { Input, InputGroup, InputLeftElement } from "@chakra-ui/input";
+import { Box, Center, Flex, Stack, Text } from "@chakra-ui/layout";
+import { Select } from "@chakra-ui/select";
+import { useTheme } from "@chakra-ui/system";
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/tabs";
+import { PlusIcon, SearchIcon } from "@heroicons/react/outline";
+import { DropdownCombobox } from "../components/dropdown-combobox";
 
 export default () => {
   return (
@@ -24,13 +29,15 @@ export default () => {
             top="1rem"
             right="1rem"
             aria-label="Add node"
-            icon={<PlusOutline />}
+            icon={<PlusIcon />}
             isRound
             size="lg"
             colorScheme="blue"
           />
-
-          <Workflow />
+          <Box>
+            <Workflow />
+            <Button>Add node</Button>
+          </Box>
         </Center>
       </Box>
     </Box>
@@ -38,9 +45,42 @@ export default () => {
 };
 
 function Sidebar() {
+  const theme = useTheme();
   return (
-    <Box bg="white" flex="1" maxW="xs" p="4">
-      <Text>stuffs</Text>
+    <Box bg="white" flex="1" maxW="xs">
+      <Stack px="4" py="6" spacing="4">
+        {/* <InputGroup>
+          <InputLeftElement
+            pointerEvents="none"
+            children={<SearchIcon height="24" color={theme.colors.gray[300]} />}
+          />
+          <Input placeholder="Search nodes" />
+        </InputGroup> */}
+        <Tabs isFitted>
+          <TabList>
+            <Tab>Triggers</Tab>
+            <Tab>Actions</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel px="0">
+              {/* <InputGroup w="full">
+                <InputLeftElement
+                  pointerEvents="none"
+                  children={
+                    <SearchIcon height="24" color={theme.colors.gray[300]} />
+                  }
+                />
+                <Input placeholder="Search applications" />
+              </InputGroup> */}
+              <DropdownCombobox />
+              {/* <Select placeholder="Integration"></Select> */}
+            </TabPanel>
+            <TabPanel>
+              <p>two!</p>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+      </Stack>
     </Box>
   );
 }

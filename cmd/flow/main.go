@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/openmesh/flow/eventbus"
+	"github.com/openmesh/flow/inmem"
 	"github.com/openmesh/flow/pg"
 	"io/ioutil"
 	"os"
@@ -151,11 +152,13 @@ func (m *Main) Run(ctx context.Context) (err error) {
 	eventBus := eventbus.New()
 	workflowService := pg.NewWorkflowService(m.DB)
 	authService := pg.NewAuthService(m.DB)
+	appsService := inmem.NewAppService()
 
 	// Attach underlying service to the HTTP server.
 	m.HTTPServer.EventBus = eventBus
 	m.HTTPServer.WorkflowService = workflowService
 	m.HTTPServer.AuthService = authService
+	m.HTTPServer.AppService = appsService
 
 	m.HTTPServer.RegisterRoute("/metrics", promhttp.Handler())
 

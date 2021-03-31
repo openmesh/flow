@@ -38,6 +38,7 @@ type Server struct {
 	WorkflowService flow.WorkflowService
 	AuthService     flow.AuthService
 	NodeService     flow.NodeService
+	AppService      flow.AppService
 }
 
 func NewServer() *Server {
@@ -126,6 +127,7 @@ func (s *Server) configureHandlers() {
 	s.mux.Handle("/v1/workflows/", s.makeWorkflowHandler())
 	s.mux.Handle("/v1/webhooks/", makeWebhookHandlers(s.EventBus, s.Logger))
 	s.mux.Handle("/v1/auth/", makeAuthHandler(s.AuthService, s.sc, s.Logger))
+	s.mux.Handle("/v1/apps/", s.makeAppHandler())
 }
 
 func (s *Server) authenticate(next http.Handler) http.Handler {
