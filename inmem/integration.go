@@ -5,24 +5,34 @@ import (
 	"github.com/openmesh/flow"
 )
 
-type appService struct {
+type integrationService struct {
 }
 
-func NewAppService() flow.AppService {
-	return appService{}
+func NewIntegrationService() flow.IntegrationService {
+	return integrationService{}
 }
 
-func (s appService) GetApps(ctx context.Context, req flow.GetAppsRequest) ([]*flow.App, int, error) {
+func (s integrationService) GetIntegrations(ctx context.Context, req flow.GetIntegrationsRequest) ([]*flow.Integration, int, error) {
 	return apps, len(apps), nil
 }
 
-var apps = []*flow.App{
+var apps = []*flow.Integration{
 	{
 		Label:       "Twitter",
 		Description: "Integrate with the Twitter V1 API.",
 		Key:         "TWITTER_V1",
 		BaseURL:     "https://api.twitter.com/1.1",
-		Triggers:    nil,
+		Triggers:    []flow.Trigger{
+			{
+				Key:         "MY_TWEET",
+				Label:       "My Tweet",
+				Description: "Triggers when you tweet something new.",
+				Endpoint:    "",
+				Method:      "",
+				Inputs:      nil,
+				Outputs:     nil,
+			},
+		},
 		Actions: []flow.Action{
 			{
 				Key:         "CREATE_TWEET",

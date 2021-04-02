@@ -2,7 +2,7 @@ import { Input, InputGroup, InputLeftElement } from "@chakra-ui/input";
 import { Box, List, ListItem } from "@chakra-ui/layout";
 import { useTheme } from "@chakra-ui/system";
 import { SearchIcon } from "@heroicons/react/outline";
-import { useCombobox } from "downshift";
+import { useCombobox, UseComboboxStateChange } from "downshift";
 import { useState } from "react";
 
 // integrations
@@ -32,8 +32,17 @@ const items = [
   },
 ];
 
-export function DropdownCombobox() {
+interface Props<T> {
+  items: T[];
+  onChange: (changes: UseComboboxStateChange<T>) => void;
+}
+
+export function DropdownCombobox<T extends { label: string }>({
+  items,
+  onChange,
+}: Props<T>) {
   const [inputItems, setInputItems] = useState(items);
+
   const {
     isOpen,
     getToggleButtonProps,
@@ -44,7 +53,7 @@ export function DropdownCombobox() {
     highlightedIndex,
     getItemProps,
   } = useCombobox({
-    items: inputItems,
+    items: items,
     itemToString: (item) => item.label,
     onInputValueChange: ({ inputValue }) => {
       setInputItems(
@@ -53,6 +62,7 @@ export function DropdownCombobox() {
         )
       );
     },
+    onSelectedItemChange: onChange,
   });
 
   const theme = useTheme();
@@ -64,7 +74,7 @@ export function DropdownCombobox() {
         <InputGroup w="full">
           <InputLeftElement
             pointerEvents="none"
-            children={<SearchIcon height="24" color={theme.colors.gray[300]} />}
+            children={<SearchIcon height="20" color={theme.colors.gray[300]} />}
           />
           <Input placeholder="Search applications" {...getInputProps()} />
         </InputGroup>

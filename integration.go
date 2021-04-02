@@ -2,7 +2,7 @@ package flow
 
 import "context"
 
-type App struct {
+type Integration struct {
 	Label       string    `json:"label"`
 	Description string    `json:"description"`
 	Key         string    `json:"key"`
@@ -17,10 +17,7 @@ type Trigger struct {
 	Description string        `json:"description"`
 	Endpoint    string        `json:"endpoint"`
 	Method      string        `json:"method"`
-	Inputs      []InputField  `json:"inputs"`
 	Outputs     []OutputField `json:"outputs"`
-	// Sample is a JSON blob
-	Sample string `json:"sample"`
 }
 
 type Action struct {
@@ -118,9 +115,9 @@ type Field struct {
 	Default  string    `json:"default"`
 }
 
-type AppService interface {
-	GetApps(ctx context.Context, req GetAppsRequest) ([]*App, int, error)
+type IntegrationService interface {
+	GetIntegrations(ctx context.Context, req GetIntegrationsRequest) ([]*Integration, int, error)
 }
 
-type GetAppsRequest struct {
+type GetIntegrationsRequest struct {
 }

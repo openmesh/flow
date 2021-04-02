@@ -2,8 +2,8 @@ module.exports = {
   async rewrites() {
     return [
       {
-        source: "/api/:slug*",
-        destination: `http://localhost:8080/api/:slug*`,
+        source: "/api/:path*",
+        destination: "http://localhost:8080/:path*", // Proxy to Backend
       },
     ];
   },

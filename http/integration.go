@@ -10,39 +10,39 @@ import (
 	"net/http"
 )
 
-func (s *Server) makeAppHandler() http.Handler {
+func (s *Server) makeIntegrationHandler() http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(s.Logger)),
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
-	getAppsHandler := kithttp.NewServer(
-		makeGetAppsEndpoint(s.AppService),
-		decodeGetAppsRequest,
+	getIntegrationsHandler := kithttp.NewServer(
+		makeGetIntegrationsEndpoint(s.IntegrationService),
+		decodeGetIntegrationsRequest,
 		encodeResponse,
 		opts...,
 	)
 
 	r := mux.NewRouter()
 
-	r.Handle("/v1/apps/", getAppsHandler).Methods("GET")
+	r.Handle("/v1/integrations", getIntegrationsHandler).Methods("GET")
 
 	return r
 }
 
-//////////////
-// Get apps //
-//////////////
+//////////////////////
+// Get integrations //
+//////////////////////
 
-type getAppsRequest struct{}
+type getIntegrationsRequest struct{}
 
-func decodeGetAppsRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	return getAppsRequest{}, nil
+func decodeGetIntegrationsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	return getIntegrationsRequest{}, nil
 }
 
-func makeGetAppsEndpoint(s flow.AppService) endpoint.Endpoint {
+func makeGetIntegrationsEndpoint(s flow.IntegrationService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		apps, total, err := s.GetApps(ctx, flow.GetAppsRequest{})
+		apps, total, err := s.GetIntegrations(ctx, flow.GetIntegrationsRequest{})
 		if err != nil {
 			return nil, err
 		}

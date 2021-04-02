@@ -33,12 +33,12 @@ type Server struct {
 
 	Logger log.Logger
 
-	EventBus        flow.EventBus
-	WebhookService  flow.WebhookService
-	WorkflowService flow.WorkflowService
-	AuthService     flow.AuthService
-	NodeService     flow.NodeService
-	AppService      flow.AppService
+	EventBus           flow.EventBus
+	WebhookService     flow.WebhookService
+	WorkflowService    flow.WorkflowService
+	AuthService        flow.AuthService
+	NodeService        flow.NodeService
+	IntegrationService flow.IntegrationService
 }
 
 func NewServer() *Server {
@@ -127,7 +127,7 @@ func (s *Server) configureHandlers() {
 	s.mux.Handle("/v1/workflows/", s.makeWorkflowHandler())
 	s.mux.Handle("/v1/webhooks/", makeWebhookHandlers(s.EventBus, s.Logger))
 	s.mux.Handle("/v1/auth/", makeAuthHandler(s.AuthService, s.sc, s.Logger))
-	s.mux.Handle("/v1/apps/", s.makeAppHandler())
+	s.mux.Handle("/v1/integrations", s.makeIntegrationHandler())
 }
 
 func (s *Server) authenticate(next http.Handler) http.Handler {
