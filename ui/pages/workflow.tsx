@@ -1,8 +1,17 @@
+import { ButtonGroup, IconButton } from "@chakra-ui/button";
 import { Input, InputGroup, InputLeftElement } from "@chakra-ui/input";
-import { Box, Center, Flex, Stack, Text } from "@chakra-ui/layout";
+import {
+  Box,
+  Center,
+  Flex,
+  Grid,
+  GridItem,
+  Stack,
+  Text,
+} from "@chakra-ui/layout";
 import { useTheme } from "@chakra-ui/system";
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/tabs";
-import { FilterIcon } from "@heroicons/react/outline";
+import { FilterIcon, MinusIcon, PlusIcon } from "@heroicons/react/outline";
 import { LightningBoltIcon } from "@heroicons/react/solid";
 import { useMemo, useRef, useState } from "react";
 import { ArcherContainer, ArcherElement } from "react-archer";
@@ -16,6 +25,8 @@ import { Node, Workflow } from "../types/workflow";
 
 export default () => {
   const [workflow, { addNode }] = useWorkflowBuilder();
+  const [zoom, { zoomIn, zoomOut }] = useZoom();
+  console.log(zoom);
 
   const [{ canDrop, isOver }, drop] = useDrop(
     () => ({
@@ -45,43 +56,90 @@ export default () => {
   const archerContainerRef = useRef<ArcherContainer>();
 
   return (
-    <ArcherContainer
-      endShape={{
-        arrow: {
-          arrowLength: 3,
-        },
-      }}
-      ref={archerContainerRef}
-    >
-      <Box bg="gray.100" minH="100vh" display="flex" flexDirection="column">
-        <Box
-          as="header"
-          bg="white"
-          p="4"
-          borderBottomColor="gray.300"
-          borderBottomWidth="1px"
+    <Box bg="gray.100" display="flex" flexDirection="column" h="100vh">
+      <Box
+        as="header"
+        bg="white"
+        p="4"
+        borderBottomColor="gray.300"
+        borderBottomWidth="1px"
+        height="4rem"
+        zIndex="1"
+      >
+        <Flex justify="space-between">
+          <h1>Create workflow</h1>
+        </Flex>
+      </Box>
+      <Box display="flex" flex="1" maxH="calc(100vh - 4rem)">
+        <Sidebar hasTrigger={workflow.nodes.length > 0} />
+        <Center
+          ref={drop}
+          role="Dustbin"
+          bg={isOver && canDrop ? "blue.50" : undefined}
+          onScroll={() => archerContainerRef.current?.refreshScreen()}
+          overflow="auto"
+          flex="1"
+          position="relative"
         >
-          <Flex justify="space-between">
-            <h1>Create workflow</h1>
-          </Flex>
-        </Box>
-        <Box display="flex" maxH="full" flex="1">
-          <Sidebar hasTrigger={workflow.nodes.length > 0} />
-          <Center
-            ref={drop}
-            role="Dustbin"
-            bg={isOver && canDrop ? "blue.50" : undefined}
-            onScroll={() => archerContainerRef.current?.refreshScreen()}
-            overflow="auto"
-            flex="1"
+          <ButtonGroup
+            position="absolute"
+            top="2rem"
+            left="2rem"
+            isAttached
+            variant="solid"
+          >
+            <IconButton
+              icon={<MinusIcon height="20" />}
+              aria-label="Zoom out"
+              onClick={zoomOut}
+            />
+            <IconButton
+              icon={<PlusIcon height="20" />}
+              aria-label="Zoom out"
+              onClick={zoomIn}
+            />
+          </ButtonGroup>
+          <ArcherContainer
+            endShape={{
+              arrow: {
+                arrowLength: 3,
+              },
+            }}
+            ref={archerContainerRef}
+            style={{
+              zoom: `${zoom}%`,
+              minWidth: "0",
+              minHeight: "0",
+              maxHeight: "100%",
+              maxWidth: "100%",
+              margin: "auto",
+            }}
           >
             <WorkflowTree workflow={workflow} addNode={addNode} />
-          </Center>
-        </Box>
+          </ArcherContainer>
+        </Center>
       </Box>
-    </ArcherContainer>
+    </Box>
   );
 };
+
+function useZoom(): [number, typeof handlers] {
+  const [zoom, setZoom] = useState(100);
+
+  const handlers = useMemo(
+    () => ({
+      zoomIn: () => {
+        setZoom(zoom + 10);
+      },
+      zoomOut: () => {
+        setZoom(zoom - 10);
+      },
+    }),
+    [zoom]
+  );
+
+  return [zoom, handlers];
+}
 
 function Sidebar({ hasTrigger }: { hasTrigger: boolean }) {
   const integrations = useIntegrations();
@@ -90,7 +148,7 @@ function Sidebar({ hasTrigger }: { hasTrigger: boolean }) {
   const theme = useTheme();
 
   return (
-    <Box bg="white" maxW="xs">
+    <Box bg="white" maxW="xs" zIndex="1" flex="1" minH="0">
       <Stack px="4" py="6" spacing="4">
         <DropdownCombobox
           items={integrations}
@@ -229,88 +287,88 @@ function WorkflowItem({
     [workflow]
   );
 
+  console.log(childNodes);
+
   return (
-    <Stack
-      // justifyContent="start"
-      // alignItems="center"
-      minW="lg"
-      spacing="8"
-      //margin="auto"
-    >
-      <ArcherElement
-        id={`workflow-item-${item.id}`}
-        relations={item.childrenIds.map((childId) => ({
-          targetId: `workflow-item-${childId}`,
-          sourceAnchor: "bottom",
-          targetAnchor: "top",
-          style: {
-            strokeColor: theme.colors.gray[300],
-          },
-        }))}
+    <Grid templateColumns={`repeat(${childNodes.length || 1}, 1fr)`}>
+      <GridItem
+        colSpan={childNodes.length || 1}
+        justifyContent="center"
+        display="flex"
       >
-        <Box
-          bg="white"
-          shadow="sm"
-          w="lg"
-          borderRadius="md"
-          _hover={{ shadow: "outline" }}
-          position="relative"
+        <ArcherElement
+          id={`workflow-item-${item.id}`}
+          relations={item.childrenIds.map((childId) => ({
+            targetId: `workflow-item-${childId}`,
+            sourceAnchor: "bottom",
+            targetAnchor: "top",
+            style: {
+              strokeColor: theme.colors.gray[300],
+            },
+          }))}
         >
           <Box
-            height="0.75rem"
-            width="0.75rem"
-            bottom="-0.375rem"
-            bg="blue.500"
-            shadow="0 0 10px #3182CE"
-            left="calc(50% - 0.375rem)"
-            borderRadius="full"
-            position="absolute"
-            transform={isOver ? undefined : "scale(0)"}
-            transition="transform"
-            transitionDuration="200ms"
-          />
-          <Box
-            id={`${item.id}-child-drop-area`}
-            ref={drop}
-            position="absolute"
-            top="50%"
-            bottom="-50%"
-            left="0"
-            right="0"
-          />
-          <Box
-            p="4"
+            bg="white"
+            shadow="sm"
+            w="lg"
             borderRadius="md"
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
+            _hover={{ shadow: "outline" }}
+            position="relative"
+            m="8"
           >
-            <Stack direction="row" alignItems="flex-start" spacing="4">
-              <Box bg="blue.50" borderRadius="md" p="2">
-                <LightningBoltIcon height="24" color={theme.colors.blue[400]} />
-              </Box>
-              <Stack spacing="1">
-                <Text color="gray.900" fontWeight="semibold" fontSize="xl">
-                  {item.label}
-                </Text>
-                <Text color="gray.500">{item.description}</Text>
+            <Box
+              height="0.75rem"
+              width="0.75rem"
+              bottom="-0.375rem"
+              bg="blue.500"
+              shadow="0 0 10px #3182CE"
+              left="calc(50% - 0.375rem)"
+              borderRadius="full"
+              position="absolute"
+              transform={isOver ? undefined : "scale(0)"}
+              transition="transform"
+              transitionDuration="200ms"
+            />
+            <Box
+              id={`${item.id}-child-drop-area`}
+              ref={drop}
+              position="absolute"
+              top="50%"
+              bottom="-50%"
+              left="0"
+              right="0"
+            />
+            <Box
+              p="4"
+              borderRadius="md"
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Stack direction="row" alignItems="flex-start" spacing="4">
+                <Box bg="blue.50" borderRadius="md" p="2">
+                  <LightningBoltIcon
+                    height="24"
+                    color={theme.colors.blue[400]}
+                  />
+                </Box>
+                <Stack spacing="1">
+                  <Text color="gray.900" fontWeight="semibold" fontSize="xl">
+                    {item.label}
+                  </Text>
+                  <Text color="gray.500">{item.description}</Text>
+                </Stack>
               </Stack>
-            </Stack>
+            </Box>
           </Box>
-        </Box>
-      </ArcherElement>
-      <Stack
-        direction="row"
-        justifyContent="start"
-        alignItems="flex-start"
-        spacing="8"
-        margin="auto"
-      >
-        {childNodes.map((n) => (
+        </ArcherElement>
+      </GridItem>
+      {childNodes.map((n) => (
+        <GridItem colSpan={1}>
           <WorkflowItem workflow={workflow} itemId={n.id} addNode={addNode} />
-        ))}
-      </Stack>
-    </Stack>
+        </GridItem>
+      ))}
+    </Grid>
   );
 }
 
