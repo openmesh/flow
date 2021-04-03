@@ -53,13 +53,7 @@ export default () => {
       }}
       ref={archerContainerRef}
     >
-      <Box
-        bg="gray.100"
-        h="100vh"
-        display="flex"
-        flexDirection="column"
-        overflowY="auto"
-      >
+      <Box bg="gray.100" minH="100vh" display="flex" flexDirection="column">
         <Box
           as="header"
           bg="white"
@@ -72,19 +66,17 @@ export default () => {
           </Flex>
         </Box>
         <Box display="flex" maxH="full" flex="1">
+          <Sidebar hasTrigger={workflow.nodes.length > 0} />
           <Center
-            flex="1"
             ref={drop}
             role="Dustbin"
             bg={isOver && canDrop ? "blue.50" : undefined}
-            overflow="auto"
             onScroll={() => archerContainerRef.current?.refreshScreen()}
+            overflow="auto"
+            flex="1"
           >
-            <Stack p="8">
-              <WorkflowTree workflow={workflow} addNode={addNode} />
-            </Stack>
+            <WorkflowTree workflow={workflow} addNode={addNode} />
           </Center>
-          <Sidebar hasTrigger={workflow.nodes.length > 0} />
         </Box>
       </Box>
     </ArcherContainer>
@@ -238,7 +230,13 @@ function WorkflowItem({
   );
 
   return (
-    <Stack justifyContent="start" alignItems="center" minW="lg" spacing="8">
+    <Stack
+      justifyContent="start"
+      alignItems="center"
+      minW="lg"
+      spacing="8"
+      margin="auto"
+    >
       <ArcherElement
         id={`workflow-item-${item.id}`}
         relations={item.childrenIds.map((childId) => ({
@@ -253,8 +251,7 @@ function WorkflowItem({
         <Box
           bg="white"
           shadow="sm"
-          maxW="lg"
-          // flex="1"
+          w="lg"
           borderRadius="md"
           _hover={{ shadow: "outline" }}
           position="relative"
@@ -307,6 +304,7 @@ function WorkflowItem({
         justifyContent="start"
         alignItems="flex-start"
         spacing="8"
+        margin="auto"
       >
         {childNodes.map((n) => (
           <WorkflowItem workflow={workflow} itemId={n.id} addNode={addNode} />
