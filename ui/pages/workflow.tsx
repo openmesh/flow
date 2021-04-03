@@ -231,11 +231,11 @@ function WorkflowItem({
 
   return (
     <Stack
-      justifyContent="start"
-      alignItems="center"
+      // justifyContent="start"
+      // alignItems="center"
       minW="lg"
       spacing="8"
-      margin="auto"
+      //margin="auto"
     >
       <ArcherElement
         id={`workflow-item-${item.id}`}
