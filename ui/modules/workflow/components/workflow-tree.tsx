@@ -6,10 +6,12 @@ export function WorkflowTree({
   workflow,
   addNode,
   selectNode,
+  selectedNodeId,
 }: {
   workflow: Workflow;
   addNode: (node: Node) => void;
   selectNode: (id: string) => void;
+  selectedNodeId: string;
 }) {
   // Get the top level node in the workflow graph.
   const rootId = useMemo(
@@ -23,6 +25,7 @@ export function WorkflowTree({
       itemId={rootId}
       addNode={addNode}
       selectNode={selectNode}
+      selectedNodeId={selectedNodeId}
     />
   ) : null;
 }

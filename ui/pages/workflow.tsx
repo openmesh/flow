@@ -139,11 +139,20 @@ export default () => {
             width="full"
             height="full"
           >
+            <Box
+              position="absolute"
+              top="0"
+              bottom="0"
+              right="0"
+              left="0"
+              onClick={() => deselectNode()}
+            />
             <Box minW="0" minH="0" maxHeight="100%">
               <WorkflowTree
                 workflow={workflow}
                 addNode={addNode}
                 selectNode={(id: string) => setSelectedNodeId(id)}
+                selectedNodeId={selectedNodeId}
               />
             </Box>
           </Center>

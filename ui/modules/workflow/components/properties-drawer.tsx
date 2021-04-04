@@ -30,8 +30,13 @@ export function PropertiesDrawer({
         visible: { right: "0rem" },
       }}
       animate={selectedNode ? "visible" : "hidden"}
-      transitionDuration="0.5"
+      transition={{
+        duration: "0.2",
+        bounce: 0,
+      }}
       p="4"
+      borderLeftColor="gray.300"
+      borderLeftWidth="thin"
     >
       <Flex justify="space-between" align="center">
         <Text fontWeight="semibold">Properties</Text>
@@ -42,6 +47,9 @@ export function PropertiesDrawer({
           onClick={onClose}
         />
       </Flex>
+      {selectedNode?.params.map((p) => (
+        <Text>{p.key}</Text>
+      ))}
     </MotionBox>
   );
 }

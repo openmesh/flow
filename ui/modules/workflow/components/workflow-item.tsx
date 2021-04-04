@@ -13,15 +13,17 @@ export function WorkflowItem({
   itemId,
   addNode,
   selectNode,
+  selectedNodeId,
 }: {
   workflow: Workflow;
   itemId: string;
   addNode: (node: Node) => void;
   selectNode: (id: string) => void;
+  selectedNodeId: string;
 }) {
   const theme = useTheme();
 
-  const item = useMemo(() => workflow.nodes.find((x) => x.id === itemId), [
+  const node = useMemo(() => workflow.nodes.find((x) => x.id === itemId), [
     workflow,
   ]);
 
@@ -50,7 +52,7 @@ export function WorkflowItem({
   );
 
   const childNodes = useMemo(
-    () => workflow.nodes.filter((n) => item.childrenIds.includes(n.id)),
+    () => workflow.nodes.filter((n) => node.childrenIds.includes(n.id)),
     [workflow]
   );
 
@@ -62,8 +64,8 @@ export function WorkflowItem({
         display="flex"
       >
         <ArcherElement
-          id={`workflow-item-${item.id}`}
-          relations={item.childrenIds.map((childId) => ({
+          id={`workflow-item-${node.id}`}
+          relations={node.childrenIds.map((childId) => ({
             targetId: `workflow-item-${childId}`,
             sourceAnchor: "bottom",
             targetAnchor: "top",
@@ -74,7 +76,9 @@ export function WorkflowItem({
         >
           <Box
             bg="white"
-            shadow="sm"
+            shadow={selectedNodeId === itemId ? "md" : "sm"}
+            borderColor={selectedNodeId === itemId ? "blue.500" : "transparent"}
+            borderWidth="thin"
             w="lg"
             borderRadius="md"
             _hover={{ shadow: "lg" }}
@@ -82,6 +86,8 @@ export function WorkflowItem({
             m="8"
             role="button"
             onClick={() => selectNode(itemId)}
+            transition="all"
+            transitionDuration="200ms"
           >
             <Box
               height="0.75rem"
@@ -97,7 +103,7 @@ export function WorkflowItem({
               transitionDuration="200ms"
             />
             <Box
-              id={`${item.id}-child-drop-area`}
+              id={`${node.id}-child-drop-area`}
               ref={drop}
               position="absolute"
               top="50%"
@@ -121,9 +127,9 @@ export function WorkflowItem({
                 </Box>
                 <Stack spacing="1">
                   <Text color="gray.900" fontWeight="semibold" fontSize="xl">
-                    {item.label}
+                    {node.label}
                   </Text>
-                  <Text color="gray.500">{item.description}</Text>
+                  <Text color="gray.500">{node.description}</Text>
                 </Stack>
               </Stack>
             </Box>
@@ -137,6 +143,7 @@ export function WorkflowItem({
             itemId={n.id}
             addNode={addNode}
             selectNode={selectNode}
+            selectedNodeId={selectedNodeId}
           />
         </GridItem>
       ))}

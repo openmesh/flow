@@ -24,7 +24,7 @@ export function Sidebar({ hasTrigger }: { hasTrigger: boolean }) {
       display="flex"
       flexDirection="column"
       borderRightColor="gray.300"
-      borderRightWidth="1px"
+      borderRightWidth="thin"
     >
       <Stack px="4" py="6" spacing="4" flex="1">
         <DropdownCombobox
