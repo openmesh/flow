@@ -1,3 +1,5 @@
+import { InputField } from "./integration";
+
 export interface Workflow {
   name: string;
   description: string;
@@ -20,4 +22,5 @@ export interface Param {
   key: string;
   value: string;
   type: "value" | "reference";
+  input: InputField;
 }

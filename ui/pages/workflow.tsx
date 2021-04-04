@@ -16,7 +16,7 @@ import { useZoom } from "../modules/workflow/hooks/use-zoom";
 import { Action, Trigger } from "../modules/shared/types/integration";
 
 export default () => {
-  const [workflow, { addNode }] = useWorkflowBuilder();
+  const [workflow, { addNode, updateParamValue }] = useWorkflowBuilder();
   const [zoom, { zoomIn, zoomOut }] = useZoom();
   const [
     selectedNodeId,
@@ -25,7 +25,7 @@ export default () => {
 
   const selectedNode = useMemo(
     () => workflow.nodes.find((n) => n.id === selectedNodeId),
-    [selectedNodeId]
+    [selectedNodeId, workflow]
   );
 
   const [{ canDrop, isOver }, drop] = useDrop(
@@ -107,7 +107,12 @@ export default () => {
           </Button>
         </HStack>
       </Box>
-      <Box display="flex" flex="1" maxH="calc(100vh - 4rem)">
+      <Box
+        display="flex"
+        flex="1"
+        maxH="calc(100vh - 4rem)"
+        position="relative"
+      >
         <Sidebar hasTrigger={workflow.nodes.length > 0} />
         <ArcherContainer
           endShape={{
@@ -125,7 +130,6 @@ export default () => {
             width: "100%",
             height: "100%",
             margin: "auto",
-            position: "relative",
           }}
         >
           <Center
@@ -156,11 +160,12 @@ export default () => {
               />
             </Box>
           </Center>
-          <PropertiesDrawer
-            selectedNode={selectedNode}
-            onClose={() => deselectNode()}
-          />
         </ArcherContainer>
+        <PropertiesDrawer
+          selectedNode={selectedNode}
+          onClose={() => deselectNode()}
+          updateParamValue={updateParamValue}
+        />
       </Box>
     </Box>
   );

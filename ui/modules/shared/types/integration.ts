@@ -13,6 +13,7 @@ export interface Trigger {
   description: string;
   endpoint: string;
   method: string;
+  inputs: InputField[];
   outputs: OutputField[];
 }
 

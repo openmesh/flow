@@ -7,6 +7,7 @@ import { Box, Grid, GridItem, Stack, Text } from "@chakra-ui/layout";
 import { ArcherElement } from "react-archer";
 import { useTheme } from "@chakra-ui/system";
 import { LightningBoltIcon } from "@heroicons/react/solid";
+import { isAction } from "../utils/is-action";
 
 export function WorkflowItem({
   workflow,
@@ -42,7 +43,14 @@ export function WorkflowItem({
           id: uuidv4(),
           integration: "",
           label: item.label,
-          params: [],
+          params: isAction(item)
+            ? item.inputs.map((input) => ({
+                input,
+                key: input.key,
+                type: "value",
+                value: input.default,
+              }))
+            : [],
           parentIds: [itemId],
           type: "ACTION",
         });
