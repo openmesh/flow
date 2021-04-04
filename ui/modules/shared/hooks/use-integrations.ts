@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getIntegrations } from "../api/integrations";
+import { getIntegrations } from "../../../api/integrations";
 import { Integration } from "../types/integration";
 
 export function useIntegrations() {

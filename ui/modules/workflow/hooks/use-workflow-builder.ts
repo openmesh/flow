@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Node, Workflow } from "../types/workflow";
+import { Node, Workflow } from "../../shared/types/workflow";
 
 export function useWorkflowBuilder(): [Workflow, typeof handlers] {
   const [workflow, setWorkflow] = useState<Workflow>({

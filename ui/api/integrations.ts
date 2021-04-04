@@ -1,5 +1,5 @@
 import camelcaseKeys from "camelcase-keys";
-import { Integration } from "../types/integration";
+import { Integration } from "../modules/shared/types/integration";
 
 export async function getIntegrations(): Promise<{
   data: Integration[];

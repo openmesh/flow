@@ -15,7 +15,6 @@
     "camelcase-keys": "^6.2.2",
     "downshift": "^6.1.2",
     "framer-motion": "^4",
-    "http-proxy-middleware": "^1.1.0",
     "next": "10.0.5",
     "react": "17.0.2",
     "react-archer": "^3.0.0",
